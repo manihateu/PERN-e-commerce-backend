@@ -13,49 +13,40 @@ const secretKey = 'nik852';
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// Регистрация нового пользователя
 app.post('/signup', async (req, res) => {
   const { name, email, password, role } = req.body;
 
-  // Проверка, что пользователь с таким email не существует
   const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
     return res.status(409).json({ message: 'User already exists' });
   }
 
-  // Создание нового пользователя
   const user = await User.create({ name, email, password, role });
 
-  // Создание JWT-токена для нового пользователя
   const token = jwt.sign({ userId: user.id, role: user.role }, secretKey, { expiresIn: '1h' });
 
   res.json({ user, token });
 });
 
-// Аутентификация пользователя
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Поиск пользователя по email
   const user = await User.findOne({ where: { email } });
 
   if (!user) {
     return res.status(401).json({ message: 'Authentication failed' });
   }
 
-  // Проверка пароля пользователя
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
     return res.status(401).json({ message: 'Authentication failed' });
   }
 
-  // Создание JWT-токена для аутентифицированного пользователя
   const token = jwt.sign({ userId: user.id, role: user.role }, secretKey, { expiresIn: '1h' });
 
   res.json({ user, token });
 });
 
-// Middleware для выдачи корзины текущего пользователя
 const getCurrentUserCart = (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, secretKey);
@@ -74,7 +65,6 @@ const getCurrentUserCart = (req, res, next) => {
       });
   };
   
-  // Обработка маршрутов для корзины
   app.get('/cart', getCurrentUserCart, async (req, res) => {
     res.json(req.cart);
   });
@@ -101,7 +91,6 @@ const getCurrentUserCart = (req, res, next) => {
     }
   });
 
-// Middleware для проверки роли пользователя
 const checkAdmin = (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, secretKey);
@@ -119,7 +108,6 @@ const checkAdmin = (req, res, next) => {
       });
   };
   
-  // Обработка маршрутов для товаров
   app.get('/products', async (req, res) => {
     const products = await Product.findAll();
     res.json(products);
@@ -137,7 +125,6 @@ const checkAdmin = (req, res, next) => {
     res.json({ success: true });
   });
 
-// Синхронизация моделей с базой данных и запуск сервера
 sequelize.sync().then(() => {
   app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
