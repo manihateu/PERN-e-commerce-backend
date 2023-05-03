@@ -1,7 +1,13 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../database');
+const bcrypt = require("bcrypt");
 
-class User extends Model {}
+class User extends Model {
+   // добавляем метод comparePassword для сравнения паролей
+   async comparePassword(password) {
+    return bcrypt.compare(password, this.password);
+  }
+}
 
 User.init(
   {
@@ -34,5 +40,13 @@ User.init(
     modelName: 'User',
   }
 );
+
+User.prototype.generateAccessToken = (id, email) => {
+  const payload = {
+      userId: id,
+      email: email
+  }
+  return jwt.sign(payload, 'Hello', {expiresIn: "1h"})
+}
 
 module.exports = User;

@@ -5,6 +5,7 @@ const sequelize = require('./database');
 const User = require('./models/User');
 const Cart = require('./models/Cart');
 const Product = require('./models/Product');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const port = 3000;
@@ -14,37 +15,49 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.post('/signup', async (req, res) => {
+  try{
   const { name, email, password, role } = req.body;
 
   const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
     return res.status(409).json({ message: 'User already exists' });
   }
+  const hashPassword = bcrypt.hashSync(password, 10)
 
-  const user = await User.create({ name, email, password, role });
+  const user = await User.create({ name, email, password: hashPassword, role });
 
   const token = jwt.sign({ userId: user.id, role: user.role }, secretKey, { expiresIn: '1h' });
 
   res.json({ user, token });
+}
+catch(e){
+  res.status(400).json({message: `${e}`})
+}
 });
 
 app.post('/login', async (req, res) => {
+  try{
   const { email, password } = req.body;
 
   const user = await User.findOne({ where: { email } });
 
   if (!user) {
-    return res.status(401).json({ message: 'Authentication failed' });
+    return res.status(401).json({ message: 'Такой email незарегистрирован' });
   }
 
-  const isPasswordValid = await user.comparePassword(password);
+  const isPasswordValid = bcrypt.compareSync(password, user.password);
   if (!isPasswordValid) {
-    return res.status(401).json({ message: 'Authentication failed' });
+    return res.status(401).json({ message: 'Неверный пароль' });
   }
 
   const token = jwt.sign({ userId: user.id, role: user.role }, secretKey, { expiresIn: '1h' });
 
   res.json({ user, token });
+}
+  catch(e){
+    console.log(e)
+    res.status(400).json({message: 'Login error'})
+  }
 });
 
 const getCurrentUserCart = (req, res, next) => {
