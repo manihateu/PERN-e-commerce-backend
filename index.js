@@ -51,7 +51,7 @@ app.post('/login', async (req, res) => {
   }
 
   const token = jwt.sign({ userId: user.id, role: user.role }, secretKey, { expiresIn: '1h' });
-
+  res.setHeader("authorization", `${token}`);
   res.json({ user, token });
 }
   catch(e){
@@ -105,6 +105,7 @@ const getCurrentUserCart = (req, res, next) => {
   });
 
 const checkAdmin = (req, res, next) => {
+  try{
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, secretKey);
     const userId = decoded.userId;
@@ -119,6 +120,10 @@ const checkAdmin = (req, res, next) => {
       .catch(error => {
         res.status(401).json({ error: 'Invalid token.' });
       });
+    }
+    catch(e){
+      res.status(403).json({error: `${e}`})
+    }
   };
   
   app.get('/products', async (req, res) => {
