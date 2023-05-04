@@ -2,9 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const sequelize = require('./database');
-const User = require('./models/User');
-const Cart = require('./models/Cart');
-const Product = require('./models/Product');
+const User = require('./Models/User');
+const Cart = require('./Models/Cart');
+const Product = require('./Models/Product');
 const bcrypt = require('bcrypt');
 
 const app = express();
